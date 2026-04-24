@@ -1,6 +1,5 @@
 'use client'
 
-import dynamic from 'next/dynamic'
 import { useEffect } from 'react'
 import Nav from '@/components/ui/Nav'
 import Hero from '@/components/sections/Hero'
@@ -10,16 +9,6 @@ import Projects from '@/components/sections/Projects'
 import Contact from '@/components/sections/Contact'
 import Footer from '@/components/ui/Footer'
 import FluidCursor from '@/components/ui/FluidCursor'
-
-// Dynamically import heavy 3D canvas — no SSR, lazy loaded
-const OrbCanvas = dynamic(() => import('@/components/3d/OrbCanvas'), {
-  ssr: false,
-  loading: () => (
-    <div className="absolute inset-0 flex items-center justify-center">
-      <div className="w-48 h-48 rounded-full bg-purple-deep/10 animate-pulse" />
-    </div>
-  ),
-})
 
 export default function Home() {
   // ── LENIS SMOOTH SCROLL ──
@@ -85,7 +74,8 @@ export default function Home() {
     <main className="page-enter min-h-screen bg-obsidian overflow-x-hidden">
       <FluidCursor />
       <Nav />
-      <Hero OrbCanvas={OrbCanvas} />
+      {/* ⚡ Yahan se OrbCanvas prop hata diya gaya hai */}
+      <Hero /> 
       <div className="section-divider" />
       <About />
       <div className="section-divider" />
