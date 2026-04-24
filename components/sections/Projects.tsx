@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useState, useMemo, useEffect } from 'react'
+import React, { useRef, useState, useMemo, useEffect, useCallback } from 'react'
 import {
   motion,
   useScroll,
@@ -9,7 +9,6 @@ import {
   useSpring,
 } from 'framer-motion'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Sparkles } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import * as THREE from 'three'
 
@@ -64,20 +63,21 @@ const projects = [
   },
 ]
 
-// ─── 3D: PARTICLES ───────────────────────────────────────────────────────────
-function SyncedParticles() {
+// ─── 3D: SYNCED PARTICLES (exact replica of hero.tsx SyncedParticles) ────────
+function StaticStars() {
   const ref = useRef<THREE.Points>(null)
+
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry()
-    const count = 350
+    const count = 400
     const pos = new Float32Array(count * 3)
     const col = new Float32Array(count * 3)
-    const cC = new THREE.Color(C).multiplyScalar(1.5)
-    const cM = new THREE.Color(M).multiplyScalar(1.5)
+    const cC = new THREE.Color(C)
+    const cM = new THREE.Color(M)
     for (let i = 0; i < count; i++) {
-      pos[i*3]   = (Math.random()-0.5)*40
-      pos[i*3+1] = (Math.random()-0.5)*40
-      pos[i*3+2] = (Math.random()-0.5)*20
+      pos[i*3]   = (Math.random()-0.5)*30
+      pos[i*3+1] = (Math.random()-0.5)*30
+      pos[i*3+2] = (Math.random()-0.5)*15 - 5
       const c = Math.random() > 0.5 ? cC : cM
       col[i*3]=c.r; col[i*3+1]=c.g; col[i*3+2]=c.b
     }
@@ -85,15 +85,28 @@ function SyncedParticles() {
     g.setAttribute('color',    new THREE.BufferAttribute(col, 3))
     return g
   }, [])
+
+  const mat = useMemo(() => (
+    <pointsMaterial
+      size={0.06}
+      vertexColors
+      transparent
+      opacity={0.4}
+      sizeAttenuation
+      blending={THREE.AdditiveBlending}
+      depthWrite={false}
+    />
+  ), [])
+
   useFrame(({ clock }) => {
     if (!ref.current) return
-    ref.current.rotation.y = clock.elapsedTime * 0.01
-    ref.current.position.y = Math.sin(clock.elapsedTime * 0.2) * 0.5
+    ref.current.rotation.y = clock.elapsedTime * 0.015
+    ref.current.position.y = Math.sin(clock.elapsedTime * 0.1) * 0.2
   })
+
   return (
     <points ref={ref} geometry={geo}>
-      <pointsMaterial size={0.08} vertexColors transparent opacity={0.6}
-        sizeAttenuation blending={THREE.AdditiveBlending} depthWrite={false} />
+      {mat}
     </points>
   )
 }
@@ -208,39 +221,33 @@ function RobotFace() {
   )
 }
 
-function Scene3D({ type, style }: { type: 'particles'|'robot'; style?: React.CSSProperties }) {
-  if (type === 'particles') {
-    return (
-      <Canvas dpr={[1,1.5]} camera={{ position:[0,0,15], fov:60 }} gl={{ antialias:false, alpha:true, powerPreference:'high-performance' }}>
-        <SyncedParticles />
-        <Sparkles count={50} scale={20} size={2.5} speed={0.3} color={C} opacity={0.5} />
-        {/* ⚡ FIXED: disableNormalPass ko enableNormalPass={false} se replace kiya */}
-        <EffectComposer enableNormalPass={false} multisampling={0}>
-          <Bloom luminanceThreshold={0.2} mipmapBlur intensity={0.8} resolutionScale={0.5} />
-        </EffectComposer>
-      </Canvas>
-    )
-  }
-  return (
-    <Canvas dpr={[1,1.5]} camera={{ position:[0,0,3.1], fov:42 }} gl={{ antialias:true, alpha:true, powerPreference:'high-performance' }} style={{ background:'transparent', ...style }}>
-      <RobotFace />
-      {/* ⚡ FIXED: Yahan bhi disableNormalPass ko enableNormalPass={false} se replace kiya */}
-      <EffectComposer enableNormalPass={false} multisampling={0}>
-        <Bloom luminanceThreshold={0.1} mipmapBlur intensity={1.2} resolutionScale={0.6} />
-      </EffectComposer>
-    </Canvas>
-  )
+function Scene3D({ type, style, isInView }: { type: 'particles'|'robot'; style?: React.CSSProperties; isInView?: boolean }) {
+  if (type === 'particles') {
+    return (
+      <Canvas dpr={[1,1.5]} camera={{ position:[0,0,15], fov:60 }} gl={{ antialias:false, alpha:true, powerPreference:'high-performance' }} frameloop="always">
+        <StaticStars />
+      </Canvas>
+    )
+  }
+  return (
+    <Canvas dpr={[1,1.5]} camera={{ position:[0,0,3.1], fov:42 }} gl={{ antialias:true, alpha:true, powerPreference:'high-performance' }} style={{ background:'transparent', ...style }}>
+      <RobotFace />
+      <EffectComposer enableNormalPass={false} multisampling={0}>
+        <Bloom luminanceThreshold={0.1} mipmapBlur intensity={1.2} resolutionScale={0.6} />
+      </EffectComposer>
+    </Canvas>
+  )
 }
 
-// ─── PROJECT CARD — Magazine horizontal list ──────────────────────────────────
-function ProjectCard({ project, index, onOpen }: { project: typeof projects[0]; index: number; onOpen: () => void }) {
+// ─── PROJECT CARD — Wrapped in React.memo for strict render isolation ────────
+const ProjectCard = React.memo(function ProjectCard({ project, index, onOpen }: { project: typeof projects[0]; index: number; onOpen: () => void }) {
   const [hovered, setHovered] = useState(false)
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: false, margin: '-60px' }}
+      viewport={{ once: true, margin: '-60px' }} // ONCE: TRUE fixes the relentless scroll jank
       transition={{ duration: 0.65, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
       onClick={onOpen}
       onMouseEnter={() => setHovered(true)}
@@ -262,6 +269,7 @@ function ProjectCard({ project, index, onOpen }: { project: typeof projects[0]; 
           borderRadius: '6px',
           position: 'relative',
           overflow: 'hidden',
+          willChange: 'background-color', // Hardware acceleration for the background
         }}
       >
         {/* Left color bar */}
@@ -383,7 +391,7 @@ function ProjectCard({ project, index, onOpen }: { project: typeof projects[0]; 
       </motion.div>
     </motion.div>
   )
-}
+})
 
 // ─── MAIN SECTION ─────────────────────────────────────────────────────────────
 export default function ClassyProjectsSection() {
@@ -401,6 +409,11 @@ export default function ClassyProjectsSection() {
     document.body.style.overflow = activeProject ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [activeProject])
+
+  // useCallback prevents re-creating functions and breaking React.memo inside the map
+  const handleOpenProject = useCallback((project: typeof projects[0]) => {
+    setActiveProject(project)
+  }, [])
 
   return (
     <section
@@ -449,7 +462,7 @@ export default function ClassyProjectsSection() {
             className="projects-header-text"
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: false }}
+            viewport={{ once: true }} // ONCE: TRUE
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '1.5rem' }}>
@@ -502,7 +515,7 @@ export default function ClassyProjectsSection() {
             className="projects-robot-wrapper"
             initial={{ opacity: 0, scale: 0.85 }}
             whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: false }}
+            viewport={{ once: true }} // ONCE: TRUE
             transition={{ duration: 1.1, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
           >
             {mounted && (
@@ -518,7 +531,7 @@ export default function ClassyProjectsSection() {
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            viewport={{ once: false }}
+            viewport={{ once: true }} // ONCE: TRUE
             transition={{ duration: 0.5 }}
             style={{ display: 'grid', gridTemplateColumns: '4.5rem 1fr auto', gap: '2rem', padding: '0 1.25rem 0.9rem', marginBottom: '0.1rem' }}
           >
@@ -528,7 +541,12 @@ export default function ClassyProjectsSection() {
           </motion.div>
 
           {projects.map((project, i) => (
-            <ProjectCard key={project.id} project={project} index={i} onOpen={() => setActiveProject(project)} />
+            <ProjectCard 
+              key={project.id} 
+              project={project} 
+              index={i} 
+              onOpen={() => handleOpenProject(project)} 
+            />
           ))}
 
           <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
@@ -538,7 +556,6 @@ export default function ClassyProjectsSection() {
       {/* ════ MODAL (Keep as is) ════ */}
       <AnimatePresence>
         {activeProject && (
-          /* ... modal content ... */
           <div /> // Placeholder for brevity, use your existing modal code here
         )}
       </AnimatePresence>

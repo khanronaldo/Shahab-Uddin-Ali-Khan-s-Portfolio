@@ -43,14 +43,14 @@ export default function Nav() {
           <div className="absolute bottom-0 right-1/4 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-[#3e8927]/60 to-transparent" />
         </div>
 
-        {/* 📸 AVATAR */}
+        {/* 📸 AVATAR (Updating Image Path Only) */}
         <a href="#hero" className="relative flex items-center gap-3 cursor-pointer group/avatar z-20 will-change-transform">
           <div className="relative flex items-center justify-center w-12 h-12 lg:w-14 lg:h-14 rounded-full overflow-hidden p-[2px]">
             {/* 🔥 OPTIMIZATION 3: Added transform-gpu and will-change-transform for smooth spinning */}
             <div className="absolute inset-[-1000%] bg-[conic-gradient(from_0deg,#dff245,#b4cc36,#78a33c,#3e8927,#5ac52f,#dff245)] animate-[spin_3s_linear_infinite] opacity-50 group-hover/avatar:opacity-100 group-hover/avatar:animate-[spin_1s_linear_infinite] transition-opacity duration-300 blur-[2px] transform-gpu will-change-transform" />
             <div className="relative w-full h-full rounded-full overflow-hidden bg-obsidian z-10">
               <Image 
-                src="/avatar.png" 
+                src="/shahab.jpg" // 🚀 SWAPPED: Changed to your orbit image
                 alt="My Logo" 
                 fill 
                 priority // 🔥 OPTIMIZATION 4: Prioritize loading to prevent initial stutter
@@ -85,7 +85,7 @@ export default function Nav() {
           ))}
         </div>
 
-        {/* 🚀 DESKTOP BUTTON */}
+        {/* 🚀 DESKTOP BUTTON (Moving lines kept) */}
         <a href="#contact" className="hidden md:inline-flex relative overflow-hidden rounded-full p-[2px] group/btn cursor-pointer will-change-transform">
           <div className="absolute inset-[-1000%] bg-[conic-gradient(from_0deg,#dff245,#b4cc36,#78a33c,#3e8927,#5ac52f,#dff245)] animate-[spin_3s_linear_infinite] opacity-50 group-hover/btn:opacity-100 group-hover/btn:animate-[spin_1s_linear_infinite] transition-opacity duration-300 blur-[2px] transform-gpu will-change-transform" />
           <div className="relative flex items-center justify-center px-8 py-3 rounded-full bg-obsidian z-10 w-full h-full">

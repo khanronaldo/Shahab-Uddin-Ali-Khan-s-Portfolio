@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useInView } from 'framer-motion'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Sparkles, Sphere, Torus, Icosahedron, Html } from '@react-three/drei'
 import { useRef, Suspense, useMemo } from 'react'
@@ -11,7 +11,6 @@ const M = '#3e8927'
 const P = '#5ac52f'
 const W = '#FFFFFF'
 
-// ⚡ OPTIMIZATION: Moved JS heavy animations (Box Shadows) to Pure CSS for GPU Hardware Acceleration
 const customStyles = `
   @keyframes text-shine-effect {
     0% { background-position: 0% 50%; }
@@ -33,7 +32,6 @@ const customStyles = `
     60% { box-shadow: 0 0 5px rgba(62,137,39,0.1), inset 0 0 2px rgba(62,137,39,0.1); opacity: 0.3; }
     80% { box-shadow: 0 0 25px rgba(62,137,39,0.5), inset 0 0 15px rgba(62,137,39,0.3); opacity: 0.9; }
   }
-
   .animate-gradient-text {
     background: linear-gradient(90deg, #ffffff 0%, #ffffff 70%, #dff245 85%, #3e8927 92%, #ffffff 100%);
     background-size: 200% auto;
@@ -48,12 +46,8 @@ const customStyles = `
     -webkit-text-fill-color: transparent;
     animation: text-shine-sub 4s linear infinite;
   }
-  .stat-card-c {
-    animation: stats-glow-c 4s linear infinite;
-  }
-  .stat-card-m {
-    animation: stats-glow-m 4s linear infinite;
-  }
+  .stat-card-c { animation: stats-glow-c 4s linear infinite; }
+  .stat-card-m { animation: stats-glow-m 4s linear infinite; }
 `
 
 function ease(t: number) { return t < 0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2 }
@@ -93,8 +87,6 @@ function Core() {
   const r1=useMemo(()=>new THREE.MeshStandardMaterial({color:C,emissive:C,emissiveIntensity:3.5}),[])
   const r2=useMemo(()=>new THREE.MeshStandardMaterial({color:M,emissive:M,emissiveIntensity:3}),[])
   const dt=useMemo(()=>new THREE.MeshStandardMaterial({color:W,emissive:W,emissiveIntensity:5}),[])
-  
-  // ⚡ OPTIMIZATION: Created Geometry and Materials once instead of regenerating in map loop
   const dotGeo = useMemo(() => new THREE.SphereGeometry(.03,8,8), [])
   const dotMatC = useMemo(() => new THREE.MeshStandardMaterial({color:C, emissive:C, emissiveIntensity:6}), [])
   const dotMatM = useMemo(() => new THREE.MeshStandardMaterial({color:M, emissive:M, emissiveIntensity:6}), [])
@@ -106,7 +98,6 @@ function Core() {
     const sp=1+v*4.5
     if(g.current){g.current.rotation.y=t*sp;g.current.rotation.x=t*sp*.45}
   })
-  
   return(
     <group ref={g}>
       <Icosahedron args={[.55,1]} material={wf}/>
@@ -116,8 +107,8 @@ function Core() {
       {[0,1,2,3,4,5].map(i=>{
         const a=(i/6)*Math.PI*2
         return(
-          <mesh 
-            key={i} 
+          <mesh
+            key={i}
             position={[Math.cos(a)*.55,Math.sin(a)*.27,Math.sin(a)*.3]}
             geometry={dotGeo}
             material={i%2===0 ? dotMatC : dotMatM}
@@ -136,16 +127,15 @@ function Shells() {
   const em=useMemo(()=>new THREE.MeshStandardMaterial({color:M,emissive:M,emissiveIntensity:2.5}),[])
   const ep=useMemo(()=>new THREE.MeshStandardMaterial({color:P,emissive:P,emissiveIntensity:2,transparent:true,opacity:.5}),[])
   const gm=useMemo(()=>new THREE.MeshBasicMaterial({color:C,transparent:true,opacity:0,side:THREE.BackSide}),[])
-  
+
   useFrame(({clock})=>{
     const t=clock.elapsedTime,cy=t%12
     let v=0
     if(cy<2.5)v=ease(cy/2.5);else if(cy<7.5)v=1;else if(cy<10)v=1-ease((cy-7.5)/2.5)
     if(L.current)L.current.position.x=-v*2.3
     if(R.current)R.current.position.x= v*2.3
-    if(gl.current){gl.current.scale.setScalar(v*(0.9+Math.sin(t*3)*.08));gm.opacity=v*.12}
+    if(gl.current){gl.current.scale.setScalar(v*(0.9+Math.sin(clock.elapsedTime*3)*.08));gm.opacity=v*.12}
   })
-  
   return(<>
     <mesh ref={gl as any} scale={0}><sphereGeometry args={[1.7,32,32]}/><primitive object={gm}/></mesh>
     <group ref={L}>
@@ -171,12 +161,10 @@ function HoloCard() {
     if(cy>=1.2&&cy<2.5)h=elastic((cy-1.2)/1.3)
     else if(cy>=2.5&&cy<7.5)h=1
     else if(cy>=7.5&&cy<10)h=1-ease((cy-7.5)/2.5)
-    if(ref.current){ref.current.scale.setScalar(h);ref.current.position.y=Math.sin(t*.65)*.09;ref.current.rotation.y=Math.sin(t*.38)*.07}
+    if(ref.current){ref.current.scale.setScalar(h);ref.current.position.y=Math.sin(clock.elapsedTime*.65)*.09;ref.current.rotation.y=Math.sin(clock.elapsedTime*.38)*.07}
   })
-  
   return(
     <group ref={ref} scale={0}>
-      {/* ⚡ OPTIMIZATION: Adding occlude=false prevents expensive CPU DOM calculations in 3D Space */}
       <Html transform center distanceFactor={3.6} position={[0,0,0]} zIndexRange={[100,0]} occlude={false}>
         <div style={{width:340,background:'rgba(2,4,10,0.95)',backdropFilter:'blur(30px)',
           border:`1px solid rgba(223,242,69,0.4)`,padding:22,borderRadius:12,
@@ -209,7 +197,7 @@ function HoloCard() {
                 Shahab Udin<br/>Ali Khan
               </h3>
               <p style={{color:'rgba(223,242,69,0.7)',marginTop:5,fontSize:9,textTransform:'uppercase',letterSpacing:'.25em'}}>Age: 23 · South Waziristan</p>
-              <p style={{fontSize:8,color:M,marginTop:2,textTransform:'uppercase',letterSpacing:'.3em',fontWeight:'bold'}}>Slimikhel · Mehsud Tribe</p>
+              <p style={{fontSize:8,color:M,marginTop:2,textTransform:'uppercase',letterSpacing:'.3em',fontWeight:'bold'}}>Tribe: Mehsood , Caste: Slimikhel</p>
             </div>
           </div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7,marginTop:14,position:'relative',zIndex:1}}>
@@ -243,27 +231,52 @@ function HoloCard() {
   )
 }
 
+// ── SYNCED PARTICLES (exact replica of hero.tsx SyncedParticles) ──
 function BgParticles() {
-  const ref=useRef<THREE.Points>(null)
-  const geo=useMemo(()=>{
-    const g=new THREE.BufferGeometry(),N=500 // ⚡ Fixed count
-    const pos=new Float32Array(N*3),col=new Float32Array(N*3)
-    for(let i=0;i<N;i++){
-      pos[i*3]=(Math.random()-.5)*50;pos[i*3+1]=(Math.random()-.5)*50;pos[i*3+2]=(Math.random()-.5)*25
-      const t=Math.random()
-      if(t<.5){col[i*3]=0.87;col[i*3+1]=0.95;col[i*3+2]=0.27}
-      else if(t<.8){col[i*3]=0.24;col[i*3+1]=0.53;col[i*3+2]=0.15}
-      else{col[i*3]=0.35;col[i*3+1]=0.77;col[i*3+2]=0.18}
+  const ref = useRef<THREE.Points>(null)
+
+  const geo = useMemo(() => {
+    const g = new THREE.BufferGeometry()
+    const count = 400
+    const pos = new Float32Array(count * 3)
+    const col = new Float32Array(count * 3)
+    const cC = new THREE.Color(C)
+    const cM = new THREE.Color(M)
+    for (let i = 0; i < count; i++) {
+      pos[i*3]   = (Math.random()-0.5)*30
+      pos[i*3+1] = (Math.random()-0.5)*30
+      pos[i*3+2] = (Math.random()-0.5)*15 - 5
+      const c = Math.random() > 0.5 ? cC : cM
+      col[i*3]=c.r; col[i*3+1]=c.g; col[i*3+2]=c.b
     }
-    g.setAttribute('position',new THREE.BufferAttribute(pos,3))
-    g.setAttribute('color',new THREE.BufferAttribute(col,3))
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+    g.setAttribute('color',    new THREE.BufferAttribute(col, 3))
     return g
-  },[])
-  useFrame(({clock})=>{
-    const t=clock.elapsedTime
-    if(ref.current){ref.current.rotation.y=t*.011;ref.current.rotation.x=t*.006}
+  }, [])
+
+  const mat = useMemo(() => (
+    <pointsMaterial
+      size={0.06}
+      vertexColors
+      transparent
+      opacity={0.4}
+      sizeAttenuation
+      blending={THREE.AdditiveBlending}
+      depthWrite={false}
+    />
+  ), [])
+
+  useFrame(({ clock }) => {
+    if (!ref.current) return
+    ref.current.rotation.y = clock.elapsedTime * 0.015
+    ref.current.position.y = Math.sin(clock.elapsedTime * 0.1) * 0.2
   })
-  return(<points ref={ref} geometry={geo}><pointsMaterial size={.065} vertexColors transparent opacity={.55} sizeAttenuation/></points>)
+
+  return (
+    <points ref={ref} geometry={geo}>
+      {mat}
+    </points>
+  )
 }
 
 const stats=[
@@ -276,134 +289,137 @@ const stats=[
 const EASE = [0.22, 1, 0.36, 1] as const
 
 export default function About() {
+  const sectionRef = useRef(null)
+  const isInView = useInView(sectionRef, { amount: 0.1 })
+
   return(
-  <section id="about" className="relative min-h-screen w-full bg-[#000000] overflow-hidden pt-56 md:pt-72 pb-48 md:pb-64 px-5 md:px-12">
-      
-      <style dangerouslySetInnerHTML={{ __html: customStyles }} />
+  <section ref={sectionRef} id="about" className="relative min-h-screen w-full bg-[#000000] overflow-hidden pt-56 md:pt-72 pb-48 md:pb-64 px-5 md:px-12">
 
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <Canvas dpr={[1, 1.5]} camera={{position:[0,0,12],fov:75}} gl={{ antialias: false, powerPreference: "high-performance", alpha: true }}>
-          <BgParticles/>
-          <Sparkles count={180} scale={22} size={1.8} speed={.25} color={C} opacity={.55}/>
-          <Sparkles count={60}  scale={18} size={1.2} speed={.18} color={M} opacity={.4}/>
-        </Canvas>
+    <style dangerouslySetInnerHTML={{ __html: customStyles }} />
+
+    <div className="absolute inset-0 z-0 pointer-events-none">
+      {/* PERFECT FIX 1: Ye canvas ab HAMESHA render hoga. Is se condition nikal di hai taake background apni jagah se kabhi na hile. */}
+      <Canvas dpr={[1, 1.5]} camera={{position:[0,0,12],fov:75}} gl={{ antialias: false, powerPreference: "high-performance", alpha: true }}>
+        <BgParticles/>
+        <Sparkles count={80}  scale={22} size={1.8} speed={0} noise={0.1} color={C} opacity={.55}/>
+        <Sparkles count={30}  scale={18} size={1.2} speed={0} noise={0.1} color={M} opacity={.4}/>
+      </Canvas>
+    </div>
+
+    <div className="relative z-10 w-full max-w-[88rem] mx-auto">
+
+      <div className="text-center mb-14 md:mb-20">
+        <motion.div
+          initial={{opacity:0,y:30}}
+          whileInView={{ opacity:1, y:0 }}
+          viewport={{ once:true, amount: 0.2, margin: '-50px' }}
+          transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <p className="text-[9px] md:text-[10px] tracking-[.55em] uppercase font-bold mb-4" style={{color:M}}>
+            Engineering Identity
+          </p>
+
+          <motion.h2
+            initial={{ opacity: 0, scale: 0.92, filter: 'blur(12px)' }}
+            whileInView={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+            viewport={{ once: true, amount: 0.3, margin: '-40px' }}
+            transition={{ duration: 1.0, type: 'spring', stiffness: 120, damping: 20 }}
+            className="font-syne font-black text-4xl sm:text-5xl md:text-6xl lg:text-7xl uppercase tracking-tighter leading-[.9] mb-3 will-change-transform animate-gradient-text drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]"
+          >
+            Shahab Udin.
+          </motion.h2>
+
+          <h3 className="font-syne font-black text-xl sm:text-2xl md:text-3xl lg:text-4xl uppercase tracking-tighter leading-tight animate-gradient-sub">
+            Forged in Mountains, Sharpened in Code.
+          </h3>
+        </motion.div>
       </div>
 
-      <div className="relative z-10 w-full max-w-[88rem] mx-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-center">
 
-        <div className="text-center mb-14 md:mb-20">
-          <motion.div 
-            initial={{opacity:0,y:30}} 
-            whileInView={{ opacity:1, y:0 }} 
-            viewport={{ once:true, amount: 0.2, margin: '-50px' }} 
-            transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <p className="text-[9px] md:text-[10px] tracking-[.55em] uppercase font-bold mb-4" style={{color:M}}>
-              Engineering Identity
+        <motion.div className="order-2 lg:order-1 flex flex-col gap-6"
+           initial={{opacity:0,x:-30}} whileInView={{opacity:1,x:0}}
+           viewport={{once:true, amount: 0.2, margin: '-60px'}}
+           transition={{duration: 0.8, ease: [0.22, 1, 0.36, 1]}}
+        >
+          <div className="space-y-4 max-w-lg">
+            <p className="text-base md:text-lg leading-relaxed" style={{color:'rgba(255,255,255,0.7)'}}>
+              <span style={{color:W,fontWeight:700}}>I am Shahab Udin Ali Khan</span> — 23-year-old engineer Born of the rugged peaks of{' '}
+              <span style={{color:C,fontWeight:600}}>Madijan, South Waziristan</span>. Where the mountains don't break you, they build you.
             </p>
-            
-            <motion.h2 
-              initial={{ opacity: 0, scale: 0.92, filter: 'blur(12px)' }} 
-              whileInView={{ opacity: 1, scale: 1, filter: 'blur(0px)' }} 
-              viewport={{ once: true, amount: 0.3, margin: '-40px' }} 
-              transition={{ duration: 1.0, type: 'spring', stiffness: 120, damping: 20 }}
-              className="font-syne font-black text-4xl sm:text-5xl md:text-6xl lg:text-7xl uppercase tracking-tighter leading-[.9] mb-3 will-change-transform animate-gradient-text drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]"
+            <p className="text-sm md:text-base leading-relaxed" style={{color:'rgba(255,255,255,0.5)'}}>
+              <span style={{color:M,fontWeight:600}}>Slimikhel Mehsud</span> — and driven by the resilient spirit of the Mehsood Tribe. I treat software architecture as a high-stakes craft where logic meets artistry.
+            </p>
+            <p className="text-sm leading-relaxed border-l-2 pl-4" style={{color:'rgba(223,242,69,0.7)',borderColor:C,fontStyle:'italic'}}>
+              "I strip away complexity to reveal clarity. My focus is strictly on high-performance systems and butter-smooth execution—digital solutions built with the same endurance and strategic precision that have defined my lineage for centuries. Simple, sharp, and built to last."
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 md:gap-4">
+            {stats.map((s,i)=>(
+              <motion.div key={s.label}
+                 initial={{opacity:0,y:15}} whileInView={{opacity:1,y:0}}
+                 viewport={{once:true, amount: 0.3, margin: '-40px'}}
+                 transition={{delay: 0.1 + 0.1*i, duration: 0.6, ease: [0.22, 1, 0.36, 1]}}
+                 className="relative p-4 md:p-5 rounded-xl overflow-hidden"
+                 style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.06)'}}>
+
+                <div
+                  className={`absolute inset-0 rounded-xl pointer-events-none ${s.cssClass}`}
+                  style={{ animationDelay: `${i * 0.5}s`, border:`1px solid ${s.col}40` }}
+                />
+
+                <motion.p className="text-3xl md:text-4xl font-black relative z-10"
+                  animate={{color:[s.col,W,s.col]}} transition={{duration:3.5,repeat:Infinity,delay:i*.7}}>
+                  {s.num}
+                </motion.p>
+                <p className="text-[9px] uppercase tracking-widest mt-1 font-bold relative z-10" style={{color:'rgba(255,255,255,0.38)'}}>
+                  {s.label}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div
+          className="order-1 lg:order-2 w-full relative flex items-center justify-center cursor-grab active:cursor-grabbing"
+          style={{height:'clamp(360px,52vw,620px)'}}
+          initial={{opacity:0,x:30}}
+          whileInView={{opacity:1,x:0}}
+          viewport={{ once: true, amount: 0.3, margin: '-60px' }}
+          transition={{duration: 0.8, ease: EASE}}
+        >
+          <Suspense fallback={<p className="font-mono text-xs uppercase tracking-widest animate-pulse" style={{color:C}}>Establishing Link…</p>}>
+            {/* PERFECT FIX 2: frameloop="demand" lagaya hai. Canvas hide nahi hoga, bs jab ap dur jaoge to iski animation wahin STOP / PAUSE hojayegi background load bachane ke liye. Wapis aoge to Resume ho jayega. */}
+            <Canvas
+              frameloop={isInView ? "always" : "demand"}
+              dpr={[1, 1.5]}
+              camera={{position:[0,0,7.8],fov:42}}
+              gl={{antialias:false, alpha:true, powerPreference: "high-performance"}}
+              style={{width:'100%', height:'100%', touchAction: 'pan-y'}}
             >
-              Shahab Udin.
-            </motion.h2>
+              <ambientLight intensity={1.2}/>
+              <pointLight position={[8,8,8]}   intensity={4.5} color={C}/>
+              <pointLight position={[-8,-8,-8]} intensity={2.5} color={W}/>
+              <pointLight position={[0,0,5]}    intensity={1.5} color={C}/>
+              <pointLight position={[4,-4,4]}   intensity={1.5} color={M}/>
+              <pointLight position={[0,5,0]}   intensity={2} color={P}/>
+              <Shells/><Core/><Rings/><HoloCard/>
+              <OrbitControls enableZoom={false} enablePan={false}/>
+            </Canvas>
+          </Suspense>
+          <div className="absolute top-4 right-2 border-r-2 pr-3 text-right hidden sm:block pointer-events-none" style={{borderColor:`${C}60`}}>
+            <p className="font-mono text-[9px] uppercase tracking-widest" style={{color:`${C}80`}}>Biometric: Active</p>
+            <p className="font-mono text-[11px] font-bold" style={{color:W}}>SHAHAB_UDIN_ALI_KHAN</p>
+          </div>
+          <div className="absolute bottom-6 left-2 border-l-2 pl-3 hidden sm:block pointer-events-none" style={{borderColor:`${M}50`}}>
+            <p className="font-mono text-[8px] uppercase tracking-widest" style={{color:`${M}70`}}>Origin: Waziristan</p>
+            <p className="font-mono text-[8px] uppercase tracking-widest" style={{color:`${C}60`}}>Status: Sovereign</p>
+          </div>
+        </motion.div>
 
-            <h3 className="font-syne font-black text-xl sm:text-2xl md:text-3xl lg:text-4xl uppercase tracking-tighter leading-tight animate-gradient-sub">
-              Forged in Mountains, Sharpened in Code.
-            </h3>
-          </motion.div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-center">
-
-          <motion.div className="order-2 lg:order-1 flex flex-col gap-6"
-             initial={{opacity:0,x:-30}} whileInView={{opacity:1,x:0}} 
-             viewport={{once:true, amount: 0.2, margin: '-60px'}} 
-             transition={{duration: 0.8, ease: [0.22, 1, 0.36, 1]}}
-          >
-            <div className="space-y-4 max-w-lg">
-              <p className="text-base md:text-lg leading-relaxed" style={{color:'rgba(255,255,255,0.7)'}}>
-                <span style={{color:W,fontWeight:700}}>Shahab Udin Ali Khan</span> — 23-year-old engineer from{' '}
-                <span style={{color:C,fontWeight:600}}>Madijon, South Waziristan</span>. Where the mountains don't break you, they build you.
-              </p>
-              <p className="text-sm md:text-base leading-relaxed" style={{color:'rgba(255,255,255,0.5)'}}>
-                <span style={{color:M,fontWeight:600}}>Slimikhel Mehsud</span> — a lineage that never surrendered.
-                That same stubbornness runs through every system I architect, every interface I forge.
-              </p>
-              <p className="text-sm leading-relaxed border-l-2 pl-4" style={{color:'rgba(223,242,69,0.7)',borderColor:C,fontStyle:'italic'}}>
-                "From a village with no signal came an engineer with all the frequency. The mountains gave patience. The code gave precision."
-              </p>
-            </div>
-
-            {/* ⚡ OPTIMIZATION: Removed heavy framer motion box-shadow animation */}
-            <div className="grid grid-cols-2 gap-3 md:gap-4">
-              {stats.map((s,i)=>(
-                <motion.div key={s.label}
-                   initial={{opacity:0,y:15}} whileInView={{opacity:1,y:0}} 
-                   viewport={{once:true, amount: 0.3, margin: '-40px'}}
-                   transition={{delay: 0.1 + 0.1*i, duration: 0.6, ease: [0.22, 1, 0.36, 1]}}
-                   className="relative p-4 md:p-5 rounded-xl overflow-hidden"
-                   style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.06)'}}>
-                  
-                  <div 
-                    className={`absolute inset-0 rounded-xl pointer-events-none ${s.cssClass}`}
-                    style={{ animationDelay: `${i * 0.5}s`, border:`1px solid ${s.col}40` }}
-                  />
-                  
-                  <motion.p className="text-3xl md:text-4xl font-black relative z-10"
-                    animate={{color:[s.col,W,s.col]}} transition={{duration:3.5,repeat:Infinity,delay:i*.7}}>
-                    {s.num}
-                  </motion.p>
-                  <p className="text-[9px] uppercase tracking-widest mt-1 font-bold relative z-10" style={{color:'rgba(255,255,255,0.38)'}}>
-                    {s.label}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* ⚡ OPTIMIZATION: once: true lazmi he, warna scroll pe framerate girega */}
-          <motion.div
-            className="order-1 lg:order-2 w-full relative flex items-center justify-center cursor-grab active:cursor-grabbing"
-            style={{height:'clamp(360px,52vw,620px)'}}
-            initial={{opacity:0,x:30}} 
-            whileInView={{opacity:1,x:0}} 
-            viewport={{ once: true, amount: 0.3, margin: '-60px' }}
-            transition={{duration: 0.8, ease: EASE}}
-          >
-            <Suspense fallback={<p className="font-mono text-xs uppercase tracking-widest animate-pulse" style={{color:C}}>Establishing Link…</p>}>
-              <Canvas 
-                dpr={[1, 1.5]}  
-                camera={{position:[0,0,7.8],fov:42}} 
-                gl={{antialias:false, alpha:true, powerPreference: "high-performance"}} 
-                style={{width:'100%', height:'100%', touchAction: 'pan-y'}} 
-              >
-                <ambientLight intensity={1.2}/>
-                <pointLight position={[8,8,8]}   intensity={4.5} color={C}/>
-                <pointLight position={[-8,-8,-8]} intensity={2.5} color={W}/>
-                <pointLight position={[0,0,5]}    intensity={1.5} color={C}/>
-                <pointLight position={[4,-4,4]}   intensity={1.5} color={M}/>
-                <pointLight position={[0,5,0]}   intensity={2} color={P}/>
-                <Shells/><Core/><Rings/><HoloCard/>
-                <OrbitControls enableZoom={false} enablePan={false}/>
-              </Canvas>
-            </Suspense>
-            <div className="absolute top-4 right-2 border-r-2 pr-3 text-right hidden sm:block pointer-events-none" style={{borderColor:`${C}60`}}>
-              <p className="font-mono text-[9px] uppercase tracking-widest" style={{color:`${C}80`}}>Biometric: Active</p>
-              <p className="font-mono text-[11px] font-bold" style={{color:W}}>SHAHAB_UDIN_ALI_KHAN</p>
-            </div>
-            <div className="absolute bottom-6 left-2 border-l-2 pl-3 hidden sm:block pointer-events-none" style={{borderColor:`${M}50`}}>
-              <p className="font-mono text-[8px] uppercase tracking-widest" style={{color:`${M}70`}}>Origin: Waziristan</p>
-              <p className="font-mono text-[8px] uppercase tracking-widest" style={{color:`${C}60`}}>Status: Sovereign</p>
-            </div>
-          </motion.div>
-
-        </div>
       </div>
-    </section>
+    </div>
+  </section>
   )
 }
