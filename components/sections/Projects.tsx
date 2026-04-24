@@ -209,25 +209,27 @@ function RobotFace() {
 }
 
 function Scene3D({ type, style }: { type: 'particles'|'robot'; style?: React.CSSProperties }) {
-  if (type === 'particles') {
-    return (
-      <Canvas dpr={[1,1.5]} camera={{ position:[0,0,15], fov:60 }} gl={{ antialias:false, alpha:true, powerPreference:'high-performance' }}>
-        <SyncedParticles />
-        <Sparkles count={50} scale={20} size={2.5} speed={0.3} color={C} opacity={0.5} />
-        <EffectComposer disableNormalPass multisampling={0}>
-          <Bloom luminanceThreshold={0.2} mipmapBlur intensity={0.8} resolutionScale={0.5} />
-        </EffectComposer>
-      </Canvas>
-    )
-  }
-  return (
-    <Canvas dpr={[1,1.5]} camera={{ position:[0,0,3.1], fov:42 }} gl={{ antialias:true, alpha:true, powerPreference:'high-performance' }} style={{ background:'transparent', ...style }}>
-      <RobotFace />
-      <EffectComposer disableNormalPass multisampling={0}>
-        <Bloom luminanceThreshold={0.1} mipmapBlur intensity={1.2} resolutionScale={0.6} />
-      </EffectComposer>
-    </Canvas>
-  )
+  if (type === 'particles') {
+    return (
+      <Canvas dpr={[1,1.5]} camera={{ position:[0,0,15], fov:60 }} gl={{ antialias:false, alpha:true, powerPreference:'high-performance' }}>
+        <SyncedParticles />
+        <Sparkles count={50} scale={20} size={2.5} speed={0.3} color={C} opacity={0.5} />
+        {/* ⚡ FIXED: disableNormalPass ko enableNormalPass={false} se replace kiya */}
+        <EffectComposer enableNormalPass={false} multisampling={0}>
+          <Bloom luminanceThreshold={0.2} mipmapBlur intensity={0.8} resolutionScale={0.5} />
+        </EffectComposer>
+      </Canvas>
+    )
+  }
+  return (
+    <Canvas dpr={[1,1.5]} camera={{ position:[0,0,3.1], fov:42 }} gl={{ antialias:true, alpha:true, powerPreference:'high-performance' }} style={{ background:'transparent', ...style }}>
+      <RobotFace />
+      {/* ⚡ FIXED: Yahan bhi disableNormalPass ko enableNormalPass={false} se replace kiya */}
+      <EffectComposer enableNormalPass={false} multisampling={0}>
+        <Bloom luminanceThreshold={0.1} mipmapBlur intensity={1.2} resolutionScale={0.6} />
+      </EffectComposer>
+    </Canvas>
+  )
 }
 
 // ─── PROJECT CARD — Magazine horizontal list ──────────────────────────────────
