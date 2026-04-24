@@ -1,0 +1,123 @@
+/* ─────────────────────────────────────────────
+   globals.css  — Performance + Animation Fixes
+   ───────────────────────────────────────────── */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── PERFORMANCE: GPU hint for heavy 3D sections ── */
+#hero,
+#about,
+#skills,
+#projects,
+#contact {
+  will-change: auto; /* FIXED: 'transform' was causing constant GPU layers */
+  isolation: isolate;
+}
+
+/* ── SCROLL ANCHOR FIX (prevents jump on section change) ── */
+html {
+  scroll-behavior: auto !important; /* Let Lenis handle this, not browser */
+}
+
+/* ── FADE-UP ANIMATION: Smoother + Correct Timing ── */
+.fade-up {
+  opacity: 0;
+  transform: translateY(28px);
+  /* FIXED: Longer duration + better easing = feels buttery */
+  transition:
+    opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fade-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger children — first child animates first */
+.fade-up:nth-child(1) { transition-delay: 0ms; }
+.fade-up:nth-child(2) { transition-delay: 80ms; }
+.fade-up:nth-child(3) { transition-delay: 160ms; }
+.fade-up:nth-child(4) { transition-delay: 240ms; }
+
+/* ── PAGE ENTER ANIMATION ── */
+.page-enter {
+  animation: pageEnter 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── SECTION DIVIDER ── */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(223, 242, 69, 0.08), transparent);
+  margin: 0;
+}
+
+/* ── FLUID CURSOR ── */
+#fluid-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #dff245;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  mix-blend-mode: difference;
+  /* FIXED: smoother cursor with hardware acceleration */
+  will-change: left, top;
+  transition: width 0.25s ease, height 0.25s ease, opacity 0.25s ease;
+}
+
+#fluid-cursor.hovered {
+  width: 40px;
+  height: 40px;
+  opacity: 0.6;
+}
+
+/* ── PERFORMANCE: Reduce motion for users who prefer it ── */
+@media (prefers-reduced-motion: reduce) {
+  .fade-up {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .page-enter {
+    animation: none;
+  }
+}
+
+/* ── CANVAS PERFORMANCE: Prevent canvas from causing layout shifts ── */
+canvas {
+  display: block;
+  outline: none;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #070707;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(223, 242, 69, 0.2);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(223, 242, 69, 0.4);
+}
