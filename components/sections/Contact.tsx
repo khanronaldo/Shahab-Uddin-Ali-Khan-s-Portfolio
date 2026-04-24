@@ -3,9 +3,9 @@
 import { useRef, useState, useMemo, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Sparkles, Float, Environment, PresentationControls, MeshTransmissionMaterial, Sphere } from '@react-three/drei'
+import { Sparkles, Float, PresentationControls } from '@react-three/drei'
 import * as THREE from 'three'
-import emailjs from '@emailjs/browser' // <-- Naya Import
+import emailjs from '@emailjs/browser' 
 
 const C = '#dff245' // Primary Lime
 const M = '#3e8927' // Dark Green
@@ -46,85 +46,77 @@ function SyncedParticles() {
   )
 }
 
-// ── THE "GOD LEVEL" 3D CORE ──
-function QuantumMessageCore() {
-  const coreRef = useRef<THREE.Mesh>(null)
-  const ringRef1 = useRef<THREE.Mesh>(null)
-  const ringRef2 = useRef<THREE.Mesh>(null)
-  const satellitesRef = useRef<THREE.Group>(null)
+// ── THE NEW "BUTTER SMOOTH HOLOGRAM" CONTACT NODE ──
+function HologramContactNode() {
+  const coreRef = useRef<THREE.Group>(null)
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime
     if (coreRef.current) {
-      coreRef.current.rotation.y = t * 0.2
-      coreRef.current.rotation.x = t * 0.1
-    }
-    if (ringRef1.current) {
-      ringRef1.current.rotation.x = Math.sin(t * 0.2) * 0.5
-      ringRef1.current.rotation.y = t * 0.3
-    }
-    if (ringRef2.current) {
-      ringRef2.current.rotation.x = Math.cos(t * 0.2) * 0.5
-      ringRef2.current.rotation.y = -t * 0.2
-    }
-    if (satellitesRef.current) {
-      satellitesRef.current.rotation.y = t * 0.4
-      satellitesRef.current.rotation.z = Math.sin(t * 0.5) * 0.2
+      // Sirf outer rings aur wireframe rotate honge
+      coreRef.current.rotation.y = t * 0.3
+      coreRef.current.rotation.x = Math.sin(t * 0.5) * 0.15
     }
   })
 
   return (
-    <Float speed={2} rotationIntensity={0.5} floatIntensity={1.5}>
+    <Float speed={2} rotationIntensity={0.4} floatIntensity={1.5}>
       <PresentationControls
         global
-        config={{ mass: 2, tension: 500 }}
-        snap={{ mass: 4, tension: 1500 }}
-        rotation={[0, 0.3, 0]}
-        polar={[-Math.PI / 3, Math.PI / 3]}
-        azimuth={[-Math.PI / 1.4, Math.PI / 2]}
+        config={{ mass: 1, tension: 400 }}
+        snap={{ mass: 2, tension: 1500 }}
+        rotation={[0.1, -0.3, 0]}
+        polar={[-Math.PI / 4, Math.PI / 4]}
+        azimuth={[-Math.PI / 2, Math.PI / 2]}
       >
-        <group>
-          <Environment preset="studio" />
-          <ambientLight intensity={0.5} />
-          <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={2} color="#ffffff" castShadow />
-          <pointLight position={[-10, -10, -10]} intensity={1} color={M} />
-          
-          <Sphere ref={coreRef} args={[0.8, 32, 32]}>
-            <meshStandardMaterial color={C} emissive={C} emissiveIntensity={1.5} toneMapped={false} />
-          </Sphere>
-
+        {/* ROTATING OUTER ELEMENTS */}
+        <group ref={coreRef}>
+          {/* Outer Global Network Sphere */}
           <mesh>
-            <icosahedronGeometry args={[1.5, 0]} />
-            <MeshTransmissionMaterial
-              backside samples={4} thickness={0.5} chromaticAberration={0.05}
-              anisotropy={0.1} distortion={0.2} distortionScale={0.3} temporalDistortion={0.1}
-              color="#ffffff" transmission={1} roughness={0.1}
+            <icosahedronGeometry args={[2.5, 2]} />
+            <meshBasicMaterial color={M} wireframe transparent opacity={0.15} blending={THREE.AdditiveBlending} />
+          </mesh>
+
+          {/* Orbital Data Rings */}
+          <mesh rotation={[Math.PI / 2.5, 0, 0]}>
+            <torusGeometry args={[2.8, 0.01, 16, 100]} />
+            <meshBasicMaterial color={C} transparent opacity={0.4} blending={THREE.AdditiveBlending} />
+          </mesh>
+          <mesh rotation={[-Math.PI / 3, Math.PI / 4, 0]}>
+            <torusGeometry args={[3, 0.015, 16, 100]} />
+            <meshBasicMaterial color={C} transparent opacity={0.2} blending={THREE.AdditiveBlending} />
+          </mesh>
+        </group>
+
+        {/* STATIC PREMIUM HOLOGRAPHIC ENVELOPE */}
+        {/* Ise coreRef se bahar rakha hai taake ye rotate na kare */}
+        <group position={[0, 0, 0]}>
+          
+          {/* Envelope Body Solid */}
+          <mesh position={[0, -0.2, 0]}>
+            <boxGeometry args={[1.8, 1.1, 0.1]} />
+            <meshStandardMaterial 
+              color="#e5e7eb" 
+              metalness={0.8} 
+              roughness={0.15} 
+            />
+          </mesh>
+          
+          {/* Envelope Flap (Diamond rotated) */}
+          <mesh position={[0, 0.45, 0.05]} rotation={[0, 0, Math.PI / 4]}>
+            <boxGeometry args={[1.2, 1.2, 0.1]} />
+            <meshStandardMaterial 
+              color="#f3f4f6" 
+              metalness={0.7} 
+              roughness={0.2} 
             />
           </mesh>
 
-          <mesh ref={ringRef1}>
-            <torusGeometry args={[2.2, 0.015, 16, 100]} />
-            <meshBasicMaterial color={C} transparent opacity={0.3} />
+          {/* Subtle Glowing Center Accent for Tech Vibe */}
+          <mesh position={[0, -0.15, 0.07]}>
+            <sphereGeometry args={[0.08, 16, 16]} />
+            <meshBasicMaterial color={C} />
           </mesh>
-          <mesh ref={ringRef2} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[2.6, 0.015, 16, 100]} />
-            <meshBasicMaterial color={M} transparent opacity={0.5} />
-          </mesh>
-
-          <group ref={satellitesRef}>
-            <mesh position={[2.2, 0, 0]}>
-              <sphereGeometry args={[0.08, 16, 16]} />
-              <meshBasicMaterial color={C} />
-            </mesh>
-            <mesh position={[-2.6, 0, 0]}>
-              <sphereGeometry args={[0.05, 16, 16]} />
-              <meshBasicMaterial color="#ffffff" />
-            </mesh>
-            <mesh position={[0, 0, 2.2]}>
-              <sphereGeometry args={[0.06, 16, 16]} />
-              <meshBasicMaterial color={P} />
-            </mesh>
-          </group>
 
         </group>
       </PresentationControls>
@@ -135,7 +127,7 @@ function QuantumMessageCore() {
 export default function Contact() {
   const [sent, setSent]        = useState(false)
   const [sending, setSending]  = useState(false)
-  const [waUrl, setWaUrl]      = useState("") // <-- WhatsApp link store karne ke liye
+  const [waUrl, setWaUrl]      = useState("") 
   const formRef                = useRef<HTMLFormElement>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -144,24 +136,21 @@ export default function Contact() {
     
     setSending(true)
 
-    // Form ka data nikalna for WhatsApp
     const formData = new FormData(formRef.current);
     const name = formData.get('name');
     const email = formData.get('email');
     const message = formData.get('message');
 
-    // WhatsApp ka link banana
-    const whatsappNumber = "923000000000"; // <-- APNA NUMBER YAHAN DALEIN (Without +)
+    const whatsappNumber = "923000000000"; 
     const whatsappText = `*New Lead from Portfolio*%0A*Name:* ${name}%0A*Email:* ${email}%0A*Message:* ${message}`;
     setWaUrl(`https://wa.me/${whatsappNumber}?text=${whatsappText}`);
 
     try {
-      // EMAILJS LOGIC - Isse aapki Gmail par email jayegi
       await emailjs.sendForm(
-        'YOUR_SERVICE_ID',    // <-- EmailJS se replace karein
-        'YOUR_TEMPLATE_ID',   // <-- EmailJS se replace karein
+        'YOUR_SERVICE_ID',    
+        'YOUR_TEMPLATE_ID',   
         formRef.current,
-        'YOUR_PUBLIC_KEY'     // <-- EmailJS se replace karein
+        'YOUR_PUBLIC_KEY'     
       )
       
       setSending(false)
@@ -218,7 +207,7 @@ export default function Contact() {
           <motion.p
             initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false }} transition={{ duration: 0.6 }}
-            style={{ fontSize: '10px', letterSpacing: '.5em', textTransform: 'uppercase', color: M, fontWeight: 700, marginBottom: '1rem' }}
+            style={{ fontSize: '10px', letterSpacing: '.5em', textTransform: 'uppercase', color: C, fontWeight: 700, marginBottom: '1rem' }}
           >
             Let's Connect
           </motion.p>
@@ -255,10 +244,10 @@ export default function Contact() {
           </motion.p>
         </div>
 
-        {/* TWO COLUMN */}
-        <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-20 justify-center">
+        {/* TWO COLUMN - Gap increased to move form away from 3D object */}
+        <div className="flex flex-col lg:flex-row items-center gap-24 lg:gap-32 justify-center">
 
-          {/* FORM AREA */}
+          {/* MODERN FORM AREA */}
           <motion.div
             className="w-full lg:w-[48%] max-w-lg"
             initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }}
@@ -270,47 +259,71 @@ export default function Contact() {
                   key="form"
                   ref={formRef}
                   onSubmit={handleSubmit}
-                  className="space-y-6"
+                  className="space-y-5"
                   initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.5 }}
                 >
-                  {/* Name Input - ADDED NAME ATTRIBUTE */}
+                  {/* MODERN Name Input */}
                   <div className="relative group pt-4">
                     <input
                       type="text" required id="name" name="name" placeholder=" "
-                      className="peer w-full bg-white/5 backdrop-blur-md text-white text-sm px-5 py-4 rounded-2xl outline-none transition-all duration-300"
-                      style={{ border: '1px solid rgba(255,255,255,0.08)' }}
-                      onFocus={(e) => { e.currentTarget.style.borderColor = C; e.currentTarget.style.boxShadow = `0 0 20px ${C}20`; e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
-                      onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                      className="peer w-full bg-white/[0.03] backdrop-blur-xl text-white text-[15px] px-6 py-4 rounded-2xl outline-none transition-all duration-500"
+                      style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+                      onFocus={(e) => { 
+                        e.currentTarget.style.borderColor = C; 
+                        e.currentTarget.style.background = `${C}0a`; 
+                        e.currentTarget.style.boxShadow = `0 10px 30px -10px ${C}30, inset 0 0 15px ${C}10`; 
+                      }}
+                      onBlur={(e) => { 
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; 
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; 
+                        e.currentTarget.style.boxShadow = 'none'; 
+                      }}
                     />
-                    <label htmlFor="name" className="absolute left-5 top-8 text-xs tracking-widest uppercase text-white/40 transition-all duration-300 pointer-events-none peer-focus:-translate-y-9 peer-focus:text-[10px] peer-focus:text-[#dff245] peer-[:not(:placeholder-shown)]:-translate-y-9 peer-[:not(:placeholder-shown)]:-translate-x-1 peer-[:not(:placeholder-shown)]:text-[10px] peer-focus:-translate-x-1 bg-[#000000] px-2 rounded">
+                    <label htmlFor="name" className="absolute left-6 top-8 text-xs tracking-widest uppercase text-white/30 transition-all duration-300 pointer-events-none peer-focus:-translate-y-9 peer-focus:text-[10px] peer-focus:text-[#dff245] peer-[:not(:placeholder-shown)]:-translate-y-9 peer-[:not(:placeholder-shown)]:-translate-x-2 peer-[:not(:placeholder-shown)]:text-[10px] peer-focus:-translate-x-2 bg-[#000000] px-3 py-0.5 rounded-full">
                       Your Name
                     </label>
                   </div>
 
-                  {/* Email Input - ADDED NAME ATTRIBUTE */}
+                  {/* MODERN Email Input */}
                   <div className="relative group pt-4">
                     <input
                       type="email" required id="email" name="email" placeholder=" "
-                      className="peer w-full bg-white/5 backdrop-blur-md text-white text-sm px-5 py-4 rounded-2xl outline-none transition-all duration-300"
-                      style={{ border: '1px solid rgba(255,255,255,0.08)' }}
-                      onFocus={(e) => { e.currentTarget.style.borderColor = C; e.currentTarget.style.boxShadow = `0 0 20px ${C}20`; e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
-                      onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                      className="peer w-full bg-white/[0.03] backdrop-blur-xl text-white text-[15px] px-6 py-4 rounded-2xl outline-none transition-all duration-500"
+                      style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+                      onFocus={(e) => { 
+                        e.currentTarget.style.borderColor = C; 
+                        e.currentTarget.style.background = `${C}0a`; 
+                        e.currentTarget.style.boxShadow = `0 10px 30px -10px ${C}30, inset 0 0 15px ${C}10`; 
+                      }}
+                      onBlur={(e) => { 
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; 
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; 
+                        e.currentTarget.style.boxShadow = 'none'; 
+                      }}
                     />
-                    <label htmlFor="email" className="absolute left-5 top-8 text-xs tracking-widest uppercase text-white/40 transition-all duration-300 pointer-events-none peer-focus:-translate-y-9 peer-focus:text-[10px] peer-focus:text-[#dff245] peer-[:not(:placeholder-shown)]:-translate-y-9 peer-[:not(:placeholder-shown)]:-translate-x-1 peer-[:not(:placeholder-shown)]:text-[10px] peer-focus:-translate-x-1 bg-[#000000] px-2 rounded">
+                    <label htmlFor="email" className="absolute left-6 top-8 text-xs tracking-widest uppercase text-white/30 transition-all duration-300 pointer-events-none peer-focus:-translate-y-9 peer-focus:text-[10px] peer-focus:text-[#dff245] peer-[:not(:placeholder-shown)]:-translate-y-9 peer-[:not(:placeholder-shown)]:-translate-x-2 peer-[:not(:placeholder-shown)]:text-[10px] peer-focus:-translate-x-2 bg-[#000000] px-3 py-0.5 rounded-full">
                       Email Address
                     </label>
                   </div>
 
-                  {/* Message Input - ADDED NAME ATTRIBUTE */}
+                  {/* MODERN Message Input */}
                   <div className="relative group pt-4">
                     <textarea
                       required id="message" name="message" rows={4} placeholder=" "
-                      className="peer w-full bg-white/5 backdrop-blur-md text-white text-sm px-5 py-4 rounded-2xl outline-none transition-all duration-300 resize-none"
-                      style={{ border: '1px solid rgba(255,255,255,0.08)' }}
-                      onFocus={(e) => { e.currentTarget.style.borderColor = C; e.currentTarget.style.boxShadow = `0 0 20px ${C}20`; e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
-                      onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                      className="peer w-full bg-white/[0.03] backdrop-blur-xl text-white text-[15px] px-6 py-4 rounded-2xl outline-none transition-all duration-500 resize-none"
+                      style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+                      onFocus={(e) => { 
+                        e.currentTarget.style.borderColor = C; 
+                        e.currentTarget.style.background = `${C}0a`; 
+                        e.currentTarget.style.boxShadow = `0 10px 30px -10px ${C}30, inset 0 0 15px ${C}10`; 
+                      }}
+                      onBlur={(e) => { 
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; 
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; 
+                        e.currentTarget.style.boxShadow = 'none'; 
+                      }}
                     />
-                    <label htmlFor="message" className="absolute left-5 top-8 text-xs tracking-widest uppercase text-white/40 transition-all duration-300 pointer-events-none peer-focus:-translate-y-9 peer-focus:text-[10px] peer-focus:text-[#dff245] peer-[:not(:placeholder-shown)]:-translate-y-9 peer-[:not(:placeholder-shown)]:-translate-x-1 peer-[:not(:placeholder-shown)]:text-[10px] peer-focus:-translate-x-1 bg-[#000000] px-2 rounded">
+                    <label htmlFor="message" className="absolute left-6 top-8 text-xs tracking-widest uppercase text-white/30 transition-all duration-300 pointer-events-none peer-focus:-translate-y-9 peer-focus:text-[10px] peer-focus:text-[#dff245] peer-[:not(:placeholder-shown)]:-translate-y-9 peer-[:not(:placeholder-shown)]:-translate-x-2 peer-[:not(:placeholder-shown)]:text-[10px] peer-focus:-translate-x-2 bg-[#000000] px-3 py-0.5 rounded-full">
                       Message
                     </label>
                   </div>
@@ -318,10 +331,10 @@ export default function Contact() {
                   {/* Submit Button */}
                   <button
                     type="submit" disabled={sending}
-                    className="w-full py-4 mt-2 rounded-2xl border relative overflow-hidden transition-all duration-300 group"
-                    style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', fontSize: '0.75rem', borderColor: `${C}35`, color: C, background: 'transparent' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${C}80`; e.currentTarget.style.boxShadow  = `0 0 40px ${C}12`; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = `${C}35`; e.currentTarget.style.boxShadow  = 'none'; }}
+                    className="w-full py-4 mt-4 rounded-2xl border relative overflow-hidden transition-all duration-500 group"
+                    style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', fontSize: '0.75rem', borderColor: `${C}40`, color: '#000', background: C }}
+                    onMouseEnter={(e) => { e.currentTarget.style.boxShadow  = `0 0 30px ${C}60`; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.boxShadow  = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
                     <span className="relative z-10 flex items-center justify-center gap-3">
                       <AnimatePresence mode="wait">
@@ -374,31 +387,37 @@ export default function Contact() {
             </AnimatePresence>
           </motion.div>
 
-          {/* ── 3D CANVAS (The Quantum Core) ── */}
+          {/* ── NEW LIGHTWEIGHT HOLOGRAM CANVAS ── */}
+          {/* Margin Top lagaya taake form se thora door ho jaye */}
           <motion.div
-            className="w-full lg:w-[46%] relative mt-10 lg:mt-0"
+            className="w-full lg:w-[46%] relative mt-16 lg:mt-0"
             style={{ height: 'clamp(380px, 50vw, 550px)' }} 
             initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: false }} transition={{ duration: 0.9, delay: 0.15 }}
           >
             <Suspense fallback={
               <div className="w-full h-full flex items-center justify-center">
-                <p className="animate-pulse text-xs uppercase tracking-widest" style={{ color: C }}>Initializing Core...</p>
+                <p className="animate-pulse text-xs uppercase tracking-widest" style={{ color: C }}>Initializing Node...</p>
               </div>
             }>
               <Canvas
-                dpr={[1, 2]}
+                dpr={[1, 1.5]} 
                 camera={{ position: [0, 0, 7.5], fov: 45 }}
-                gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+                gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
                 style={{ width: '100%', height: '100%', cursor: 'grab' }}
               >
-                <QuantumMessageCore />
+                {/* Lights zaroori hain Standard Material ko render karne ke liye */}
+                <ambientLight intensity={1.5} />
+                <directionalLight position={[10, 10, 10]} intensity={2.5} color="#ffffff" />
+                <directionalLight position={[-10, -10, -10]} intensity={1} color={C} />
+                
+                <HologramContactNode />
               </Canvas>
             </Suspense>
 
             <div className="absolute bottom-0 lg:bottom-3 left-1/2 -translate-x-1/2 pointer-events-none" style={{ whiteSpace: 'nowrap' }}>
               <p style={{ fontFamily: 'monospace', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '.3em', color: `${C}55` }}>
-                Interactive Data Node · Drag to Inspect
+                Hologram Node · Drag to Inspect
               </p>
             </div>
           </motion.div>
