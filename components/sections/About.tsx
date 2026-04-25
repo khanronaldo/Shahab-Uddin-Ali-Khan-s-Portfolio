@@ -1,16 +1,18 @@
 'use client'
 
 import { motion, useInView } from 'framer-motion'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { Sparkles, Sphere, Torus, Icosahedron } from '@react-three/drei'
-import { useRef, Suspense, useMemo } from 'react'
+import { Canvas } from '@react-three/fiber'
+import { Torus, Icosahedron } from '@react-three/drei'
+import { useRef, Suspense, useMemo, useState, useEffect } from 'react'
 import * as THREE from 'three'
+import { useFrame } from '@react-three/fiber'
 
 const C = '#dff245'
 const M = '#3e8927'
 const P = '#5ac52f'
 const W = '#FFFFFF'
 
+// ─── All your existing animation styles (unchanged) ───
 const customStyles = `
   @keyframes text-shine-effect {
     0% { background-position: 0% 50%; }
@@ -53,9 +55,6 @@ const customStyles = `
 `
 
 function ease(t: number) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2 }
-function elastic(t: number) {
-  return t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * (2 * Math.PI / 3)) + 1
-}
 
 function Rings() {
   const g = useRef<THREE.Group>(null)
@@ -70,16 +69,15 @@ function Rings() {
     let v = 0
     if (cy < 2.5) v = ease(cy / 2.5); else if (cy < 7.5) v = 1; else if (cy < 10) v = 1 - ease((cy - 7.5) / 2.5)
     if (g.current) g.current.scale.setScalar(v)
-    // Reduced segment counts on torus: 8,96 -> 6,80
     if (a.current) a.current.rotation.z = t * 0.55
     if (b.current) { b.current.rotation.x = t * 0.38; b.current.rotation.z = t * 0.2 }
     if (c.current) { c.current.rotation.y = t * 0.72; c.current.rotation.x = t * 0.28 }
   })
   return (
     <group ref={g}>
-      <mesh ref={a as any}><torusGeometry args={[1.9, 0.013, 6, 80]} /><primitive object={mC} /></mesh>
-      <mesh ref={b as any}><torusGeometry args={[2.25, 0.009, 6, 80]} /><primitive object={mM} /></mesh>
-      <mesh ref={c as any}><torusGeometry args={[2.55, 0.007, 6, 80]} /><primitive object={mP} /></mesh>
+      <mesh ref={a as any}><torusGeometry args={[1.9, 0.013, 6, 64]} /><primitive object={mC} /></mesh>
+      <mesh ref={b as any}><torusGeometry args={[2.25, 0.009, 6, 64]} /><primitive object={mM} /></mesh>
+      <mesh ref={c as any}><torusGeometry args={[2.55, 0.007, 6, 64]} /><primitive object={mP} /></mesh>
     </group>
   )
 }
@@ -104,9 +102,9 @@ function Core() {
   return (
     <group ref={g}>
       <Icosahedron args={[0.55, 1]} material={wf} />
-      <Torus args={[0.56, 0.014, 6, 60]} rotation={[Math.PI / 2, 0, 0]} material={r1} />
-      <Torus args={[0.56, 0.010, 6, 60]} rotation={[0, 0, Math.PI / 4]} material={r2} />
-      <Sphere args={[0.17, 12, 12]} material={dt} />
+      <Torus args={[0.56, 0.014, 6, 48]} rotation={[Math.PI / 2, 0, 0]} material={r1} />
+      <Torus args={[0.56, 0.010, 6, 48]} rotation={[0, 0, Math.PI / 4]} material={r2} />
+      <mesh geometry={new THREE.SphereGeometry(0.17, 10, 10)} material={dt} />
       {[0, 1, 2, 3, 4, 5].map(i => {
         const angle = (i / 6) * Math.PI * 2
         return (
@@ -141,56 +139,21 @@ function Shells() {
   })
   return (
     <>
-      <mesh ref={gl as any} scale={0}><sphereGeometry args={[1.7, 24, 24]} /><primitive object={gm} /></mesh>
+      <mesh ref={gl as any} scale={0}><sphereGeometry args={[1.7, 16, 16]} /><primitive object={gm} /></mesh>
       <group ref={L}>
-        <Sphere args={[1.3, 48, 48, Math.PI / 2, Math.PI]} material={sh} />
-        <Torus args={[1.32, 0.018, 10, 96, Math.PI]} rotation={[0, 0, Math.PI / 2]} material={ec} />
+        <mesh><sphereGeometry args={[1.3, 32, 32, Math.PI / 2, Math.PI]} /><primitive object={sh} /></mesh>
+        <Torus args={[1.32, 0.018, 8, 64, Math.PI]} rotation={[0, 0, Math.PI / 2]} material={ec} />
         <Torus args={[0.88, 0.008, 6, 48, Math.PI]} rotation={[0, 0, Math.PI / 2]} position={[0.1, 0, 0]} material={em} />
         <Torus args={[0.50, 0.006, 6, 48, Math.PI]} rotation={[0, 0, Math.PI / 2]} position={[0.2, 0, 0]} material={ep} />
       </group>
       <group ref={R}>
-        <Sphere args={[1.3, 48, 48, -Math.PI / 2, Math.PI]} material={sh} />
-        <Torus args={[1.32, 0.018, 10, 96, Math.PI]} rotation={[0, 0, -Math.PI / 2]} material={ec} />
+        <mesh><sphereGeometry args={[1.3, 32, 32, -Math.PI / 2, Math.PI]} /><primitive object={sh} /></mesh>
+        <Torus args={[1.32, 0.018, 8, 64, Math.PI]} rotation={[0, 0, -Math.PI / 2]} material={ec} />
         <Torus args={[0.88, 0.008, 6, 48, Math.PI]} rotation={[0, 0, -Math.PI / 2]} position={[-0.1, 0, 0]} material={em} />
         <Torus args={[0.50, 0.006, 6, 48, Math.PI]} rotation={[0, 0, -Math.PI / 2]} position={[-0.2, 0, 0]} material={ep} />
       </group>
     </>
   )
-}
-
-// Removed HoloCard (Html/R3F) — it's extremely expensive on mobile (forces a DOM layer per frame)
-// Replaced with a 2D overlay positioned absolutely over the canvas, same visual info
-
-// Synced background particles
-function BgParticles() {
-  const ref = useRef<THREE.Points>(null)
-  const geo = useMemo(() => {
-    const g = new THREE.BufferGeometry()
-    const count = 220
-    const pos = new Float32Array(count * 3)
-    const col = new Float32Array(count * 3)
-    const cC = new THREE.Color(C), cM = new THREE.Color(M)
-    for (let i = 0; i < count; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 30
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 30
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 15 - 5
-      const c = Math.random() > 0.5 ? cC : cM
-      col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b
-    }
-    g.setAttribute('position', new THREE.BufferAttribute(pos, 3))
-    g.setAttribute('color', new THREE.BufferAttribute(col, 3))
-    return g
-  }, [])
-  const material = useMemo(() => new THREE.PointsMaterial({
-    size: 0.07, vertexColors: true, transparent: true, opacity: 0.4,
-    sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false,
-  }), [])
-  useFrame(({ clock }) => {
-    if (!ref.current) return
-    ref.current.rotation.y = clock.elapsedTime * 0.015
-    ref.current.position.y = Math.sin(clock.elapsedTime * 0.1) * 0.2
-  })
-  return <points ref={ref} geometry={geo} material={material} />
 }
 
 const stats = [
@@ -205,32 +168,32 @@ const EASE = [0.22, 1, 0.36, 1] as const
 export default function About() {
   const sectionRef = useRef(null)
   const isInView = useInView(sectionRef, { amount: 0.1 })
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check, { passive: true })
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   return (
     <section
       ref={sectionRef}
       id="about"
       className="relative w-full overflow-hidden pt-56 md:pt-72 pb-48 md:pb-64 px-5 md:px-12"
-      style={{ backgroundColor: '#000000', minHeight: '100vh' }}
+      // transparent — global bg canvas shows through
+      style={{ backgroundColor: 'transparent', minHeight: '100vh' }}
     >
       <style dangerouslySetInnerHTML={{ __html: customStyles }} />
 
-      {/* Background canvas — pointer events disabled */}
-      <div
-        className="absolute inset-0 z-0"
-        style={{ pointerEvents: 'none', touchAction: 'none' }}
-      >
-        <Canvas
-          dpr={[1, 1.5]}
-          camera={{ position: [0, 0, 12], fov: 75 }}
-          gl={{ antialias: false, powerPreference: 'high-performance', alpha: true }}
-          style={{ pointerEvents: 'none', touchAction: 'none' }}
-        >
-          <BgParticles />
-          <Sparkles count={50} scale={22} size={1.8} speed={0} noise={0.1} color={C} opacity={0.45} />
-          <Sparkles count={20} scale={18} size={1.2} speed={0} noise={0.1} color={M} opacity={0.3} />
-        </Canvas>
-      </div>
+      {/* NO local background canvas on mobile — global one handles it */}
+      {/* On desktop, subtle extra glow only */}
+      {!isMobile && (
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <div style={{ position: 'absolute', top: '30%', left: '20%', width: 400, height: 400, borderRadius: '50%', background: `radial-gradient(circle, rgba(223,242,69,0.03) 0%, transparent 70%)` }} />
+        </div>
+      )}
 
       <div className="relative z-10 w-full max-w-[88rem] mx-auto">
         {/* HEADING */}
@@ -312,37 +275,61 @@ export default function About() {
             </div>
           </motion.div>
 
-          {/* RIGHT: 3D ORB — OrbitControls removed, pointer-events disabled */}
+          {/* RIGHT: 3D ORB — hidden on mobile, replaced with CSS orb */}
           <motion.div
             className="order-1 lg:order-2 w-full relative flex items-center justify-center"
-            style={{ height: 'clamp(320px, 48vw, 580px)', pointerEvents: 'none', touchAction: 'none' }}
+            style={{
+              height: 'clamp(320px, 48vw, 580px)',
+              pointerEvents: 'none',
+              touchAction: 'none',
+            }}
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, amount: 0.3, margin: '-60px' }}
             transition={{ duration: 0.8, ease: EASE }}
           >
-            <Suspense fallback={
-              <p className="font-mono text-xs uppercase tracking-widest animate-pulse" style={{ color: C }}>Establishing Link…</p>
-            }>
-              <Canvas
-                frameloop={isInView ? 'always' : 'demand'}
-                dpr={[1, 1.5]}
-                camera={{ position: [0, 0, 7.8], fov: 42 }}
-                gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
-                style={{ width: '100%', height: '100%', pointerEvents: 'none', touchAction: 'none' }}
-              >
-                <ambientLight intensity={1.0} />
-                <pointLight position={[8, 8, 8]}    intensity={4} color={C} />
-                <pointLight position={[-8, -8, -8]} intensity={2} color={W} />
-                <pointLight position={[0, 0, 5]}    intensity={1.2} color={C} />
-                <pointLight position={[4, -4, 4]}   intensity={1.2} color={M} />
-                <pointLight position={[0, 5, 0]}    intensity={1.6} color={P} />
-                <Shells /><Core /><Rings />
-                {/* NO OrbitControls — fully passive */}
-              </Canvas>
-            </Suspense>
+            {isMobile ? (
+              // Mobile: pure CSS orb instead of WebGL — saves entire canvas context
+              <div className="relative flex items-center justify-center" style={{ width: 260, height: 260 }}>
+                <div style={{
+                  width: 200, height: 200, borderRadius: '50%',
+                  background: `radial-gradient(circle at 35% 35%, rgba(223,242,69,0.15), rgba(62,137,39,0.08) 50%, transparent 70%)`,
+                  border: '1px solid rgba(223,242,69,0.3)',
+                  boxShadow: '0 0 40px rgba(223,242,69,0.12), inset 0 0 40px rgba(223,242,69,0.05)',
+                  animation: 'float-orb 4s ease-in-out infinite',
+                }} />
+                <div style={{
+                  position: 'absolute', inset: -20, borderRadius: '50%',
+                  border: '1px solid rgba(223,242,69,0.15)',
+                  animation: 'spin-ring 8s linear infinite',
+                }} />
+                <style>{`
+                  @keyframes float-orb { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+                  @keyframes spin-ring { to{transform:rotate(360deg)} }
+                `}</style>
+              </div>
+            ) : (
+              <Suspense fallback={
+                <p className="font-mono text-xs uppercase tracking-widest animate-pulse" style={{ color: C }}>Establishing Link…</p>
+              }>
+                <Canvas
+                  frameloop={isInView ? 'always' : 'demand'}
+                  dpr={[1, 1.5]}
+                  camera={{ position: [0, 0, 7.8], fov: 42 }}
+                  gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
+                  style={{ width: '100%', height: '100%', pointerEvents: 'none', touchAction: 'none' }}
+                >
+                  <ambientLight intensity={1.0} />
+                  <pointLight position={[8, 8, 8]}    intensity={4} color={C} />
+                  <pointLight position={[-8, -8, -8]} intensity={2} color={W} />
+                  <pointLight position={[0, 0, 5]}    intensity={1.2} color={C} />
+                  <pointLight position={[4, -4, 4]}   intensity={1.2} color={M} />
+                  <pointLight position={[0, 5, 0]}    intensity={1.6} color={P} />
+                  <Shells /><Core /><Rings />
+                </Canvas>
+              </Suspense>
+            )}
 
-            {/* Decorative labels — moved outside Canvas (pure CSS, no R3F overhead) */}
             <div className="absolute top-4 right-2 border-r-2 pr-3 text-right hidden sm:block" style={{ borderColor: `${C}60`, pointerEvents: 'none' }}>
               <p className="font-mono text-[9px] uppercase tracking-widest" style={{ color: `${C}80` }}>Biometric: Active</p>
               <p className="font-mono text-[11px] font-bold" style={{ color: W }}>SHAHAB_UDIN_ALI_KHAN</p>

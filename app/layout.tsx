@@ -1,5 +1,13 @@
 import type { Metadata } from 'next'
 import '@/styles/globals.css'
+import dynamic from 'next/dynamic'
+
+// Client-only — no SSR needed
+const GlobalParticlesBackground = dynamic(
+  // line 7 mein yeh karo:
+() => import('@/components/3d/Globalparticles'),
+  { ssr: false }
+)
 
 export const metadata: Metadata = {
   title: 'Shahab ud Din — Creative Developer',
@@ -19,8 +27,6 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-
-    
     <html lang="en" className="scroll-smooth">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -30,10 +36,16 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="bg-obsidian antialiased">
+      {/*
+        bg-black on body = CRITICAL
+        Prevents white flash when WebGL contexts are initializing or lost on mobile.
+        bg-obsidian was likely a dark color BUT if it wasn't pure black or if
+        Tailwind CSS hadn't loaded yet, you'd see white. bg-black is always safe.
+      */}
+      <body className="bg-black antialiased">
+        {/* Single shared particle background — fixed position, sits behind everything */}
+        <GlobalParticlesBackground />
         {children}
-
-        
       </body>
     </html>
   )

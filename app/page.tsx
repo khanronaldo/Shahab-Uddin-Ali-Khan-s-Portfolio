@@ -12,18 +12,22 @@ import FluidCursor from '@/components/ui/FluidCursor'
 
 export default function Home() {
   // ── LENIS SMOOTH SCROLL ──
+  // Disabled on mobile — native scroll is smoother and saves CPU/memory
   useEffect(() => {
+    // Touch devices: skip Lenis entirely, native scroll is better
+    const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches
+    if (isTouchDevice) return
+
     let lenis: any
     let rafId: number
 
     const initLenis = async () => {
       const { default: Lenis } = await import('lenis')
       lenis = new Lenis({
-        duration: 1.2,           // FIXED: 1.4 se 1.2 — thoda faster feel
+        duration: 1.2,
         easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        touchMultiplier: 1.5,    // FIXED: 2 se 1.5 — mobile pe over-scroll na ho
         smoothWheel: true,
-        wheelMultiplier: 0.9,    // ADDED: wheel speed control
+        wheelMultiplier: 0.9,
       })
 
       const raf = (time: number) => {
@@ -42,9 +46,6 @@ export default function Home() {
   }, [])
 
   // ── SCROLL REVEAL OBSERVER ──
-  // FIXED: threshold 0.08 bahut jaldi trigger karta tha
-  // Ab 0.15 hai aur rootMargin negative hai taake animation tab aaye
-  // jab element screen ke beech mein aa jaye
   useEffect(() => {
     const els = document.querySelectorAll('.fade-up')
 
@@ -52,17 +53,16 @@ export default function Home() {
       (entries) => {
         entries.forEach((e) => {
           if (e.isIntersecting) {
-            // FIXED: Small delay taake section properly visible ho
             setTimeout(() => {
               e.target.classList.add('visible')
             }, 80)
-            obs.unobserve(e.target) // ADDED: unobserve once visible — memory leak prevent
+            obs.unobserve(e.target)
           }
         })
       },
       {
-        threshold: 0.15,          // FIXED: 0.08 se 0.15 — 15% visible hone pe animate
-        rootMargin: '0px 0px -60px 0px', // ADDED: 60px margin — element thoda aur andar aaye
+        threshold: 0.15,
+        rootMargin: '0px 0px -60px 0px',
       }
     )
 
@@ -71,11 +71,15 @@ export default function Home() {
   }, [])
 
   return (
-    <main className="page-enter min-h-screen bg-obsidian overflow-x-hidden">
+    /*
+      IMPORTANT: bg-transparent here — GlobalParticlesBackground (in layout.tsx)
+      is fixed behind everything. bg-obsidian / bg-black would cover it.
+      The black body in layout.tsx handles the base color.
+    */
+    <main className="page-enter min-h-screen bg-transparent overflow-x-hidden">
       <FluidCursor />
       <Nav />
-      {/* ⚡ Yahan se OrbCanvas prop hata diya gaya hai */}
-      <Hero /> 
+      <Hero />
       <div className="section-divider" />
       <About />
       <div className="section-divider" />
